@@ -1,0 +1,54 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+  resource:
+    attributes:
+      - key: test.key
+        value: "test-value"
+        action: insert
+
+exporters:
+  otlp:
+    endpoint: otelcol:4317
+
+  logging:
+    loglevel: debug
+
+  jaeger:
+    endpoint: "jaeger-all-in-one:14250"
+    tls:
+      insecure: true
+
+  prometheus:
+    endpoint: "0.0.0.0:9000"
+    const_labels:
+      label: value
+
+extensions:
+  health_check:
+  pprof:
+  zpages:
+
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, resource]
+      exporters: [jaeger]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp]
